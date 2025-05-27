@@ -229,8 +229,8 @@
       }
 
       if (firstCard.dataset.pairId === card.dataset.pairId) {
-        firstCard.classList.add("matched");
-        card.classList.add("matched");
+        firstCard.classList.add("matched", "flipped");
+        card.classList.add("matched", "flipped");
         firstCard = null;
         matchedPairs++;
         updateScore();
