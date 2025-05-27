@@ -228,9 +228,11 @@
         return;
       }
 
-      if (firstCard.dataset.pairId === card.dataset.pairId) {
-        firstCard.classList.add("matched", "flipped");
-        card.classList.add("matched", "flipped");
+      const isMatch = firstCard.dataset.pairId === card.dataset.pairId;
+
+      if (isMatch) {
+        firstCard.classList.add("matched");
+        card.classList.add("matched");
         firstCard = null;
         matchedPairs++;
         updateScore();
