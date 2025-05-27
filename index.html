@@ -231,8 +231,9 @@
       const isMatch = firstCard.dataset.pairId === card.dataset.pairId;
 
       if (isMatch) {
-        firstCard.classList.add("matched");
-        card.classList.add("matched");
+        // 정답일 경우 matched + flipped 모두 유지
+        firstCard.classList.add("matched", "flipped");
+        card.classList.add("matched", "flipped");
         firstCard = null;
         matchedPairs++;
         updateScore();
