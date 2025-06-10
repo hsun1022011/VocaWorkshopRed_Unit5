@@ -103,7 +103,6 @@
       max-height: 100%;
     }
 
-    /* 음소거 버튼 */
     #muteToggle {
       position: absolute;
       top: 10px;
@@ -308,7 +307,7 @@
 
       const unit = unitSelect.value;
       const cls = classSelect.value;
-      const selectedCSV = `word_list_${unit}_${cls}.csv`;
+      const selectedCSV = `word_lists/word_list_${unit}_${cls}.csv`;
 
       const response = await fetch(selectedCSV);
       const text = await response.text();
