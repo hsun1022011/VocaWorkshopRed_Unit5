@@ -8,6 +8,7 @@
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 20px;
+      position: relative;
     }
 
     h1 {
@@ -41,12 +42,10 @@
 
     .game-board {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      grid-template-columns: repeat(6, 1fr);
       gap: 10px;
-      margin-top: 20px;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
+      width: 80%;
+      margin: 20px auto;
     }
 
     .card {
@@ -83,7 +82,7 @@
       padding: 10px;
       font-size: 14px;
     }
-/*세모캐릭터배경색 fff*/
+
     .card-back {
       background-color: #fff;
     }
@@ -92,7 +91,6 @@
       transform: rotateY(180deg);
     }
 
-    /* 맞춘 카드 시각 피드백 스타일 */
     .matched {
       border: 3px solid #45a049 !important;
       background-color: #d4edda !important;
@@ -104,17 +102,36 @@
       max-width: 100%;
       max-height: 100%;
     }
+
+    /* 음소거 버튼 */
+    #muteToggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <h1>Matching Card Game</h1>
 
+  <button id="muteToggle">🔊</button>
+
   <div class="controls">
     Unit:
     <select id="unitSelect">
-      <option value="word_list_unit1.csv">Unit 1</option>
-      <option value="word_list_unit2.csv">Unit 2</option>
-      <option value="word_list_unit1+2.csv">Unit 1 + 2</option>
+      <option value="unit5">Unit 5</option>
+      <option value="unit6">Unit 6</option>
+    </select>
+
+    Class:
+    <select id="classSelect">
+      <option value="class1">Class 1</option>
+      <option value="class2">Class 2</option>
+      <option value="class1+2">Class 1 + 2</option>
     </select>
 
     Level:
@@ -131,6 +148,11 @@
   <div class="timer" id="timer">남은 시간: 0초</div>
   <div class="game-board" id="gameBoard"></div>
 
+  <!-- 효과음 -->
+  <audio id="soundSuccess" src="sounds/success.mp3" preload="auto"></audio>
+  <audio id="soundTimeover" src="sounds/timeover.mp3" preload="auto"></audio>
+  <audio id="soundHalf" src="sounds/half_success.mp3" preload="auto"></audio>
+
   <script>
     let cardData = [];
     let matchedPairs = 0;
@@ -138,15 +160,23 @@
     let lockBoard = false;
     let timer = null;
     let remainingTime = 0;
+    let totalPairs = 0;
+    let isMuted = false;
 
     const backImage = "images/back_image.jpg";
 
     const unitSelect = document.getElementById("unitSelect");
+    const classSelect = document.getElementById("classSelect");
     const levelSelect = document.getElementById("levelSelect");
     const gameBoard = document.getElementById("gameBoard");
     const scoreDisplay = document.getElementById("score");
     const timerDisplay = document.getElementById("timer");
     const startBtn = document.getElementById("startBtn");
+
+    const muteBtn = document.getElementById("muteToggle");
+    const soundSuccess = document.getElementById("soundSuccess");
+    const soundTimeover = document.getElementById("soundTimeover");
+    const soundHalf = document.getElementById("soundHalf");
 
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
@@ -163,9 +193,25 @@
       timerDisplay.textContent = `남은 시간: ${remainingTime}초`;
       if (remainingTime <= 0) {
         clearInterval(timer);
-        alert(`Good job! ${cardData.length / 2}쌍 중 ${matchedPairs}쌍 맞췄어! 멋진걸!`);
+        handleEndOfGame();
       }
       remainingTime--;
+    }
+
+    function handleEndOfGame() {
+      const matched = matchedPairs;
+      const total = totalPairs;
+
+      if (matched === total) {
+        if (!isMuted) soundSuccess.play();
+        alert(`성공! ${total}쌍 모두 맞췄어!`);
+      } else if (matched >= total / 2) {
+        if (!isMuted) soundHalf.play();
+        alert(`아깝다! ${total}쌍 중 ${matched}쌍 맞췄어 (절반 이상 성공!)`);
+      } else {
+        if (!isMuted) soundTimeover.play();
+        alert(`시간 초과! ${total}쌍 중 ${matched}쌍 맞췄어. 다음엔 더 잘해보자!`);
+      }
     }
 
     function createBoard(pairs) {
@@ -173,6 +219,7 @@
       matchedPairs = 0;
       firstCard = null;
       lockBoard = false;
+      totalPairs = pairs.length;
       updateScore();
 
       cardData = [];
@@ -236,20 +283,13 @@
       if (isMatch) {
         firstCard.classList.add("matched");
         card.classList.add("matched");
-
-        // 맞춘 카드도 flipped 유지
-        firstCard.classList.add("flipped");
-        card.classList.add("flipped");
-
         matchedPairs++;
         updateScore();
         firstCard = null;
 
         if (matchedPairs === cardData.length / 2) {
           clearInterval(timer);
-          setTimeout(() => {
-            alert(`Good job! ${60 - remainingTime}초 걸렸어! 멋진걸!`);
-          }, 300);
+          setTimeout(handleEndOfGame, 300);
         }
       } else {
         lockBoard = true;
@@ -266,7 +306,10 @@
       const [pairCount, timeLimit] = levelSelect.value.split(",").map(Number);
       remainingTime = timeLimit;
 
-      const selectedCSV = unitSelect.value;
+      const unit = unitSelect.value;
+      const cls = classSelect.value;
+      const selectedCSV = `word_list_${unit}_${cls}.csv`;
+
       const response = await fetch(selectedCSV);
       const text = await response.text();
 
@@ -286,6 +329,11 @@
     }
 
     startBtn.addEventListener("click", loadCSVAndStart);
+
+    muteBtn.addEventListener("click", () => {
+      isMuted = !isMuted;
+      muteBtn.textContent = isMuted ? "🔇" : "🔊";
+    });
   </script>
 </body>
 </html>
